@@ -129,12 +129,20 @@ dune runtest modules/module4-abstract-interpretation/exercises/sign-lattice/
 You should see output like:
 
 ```
-EEEEEEEEEEEEEEEEEEEE
+Fatal error: exception Failure("TODO: return the bottom element")
 ```
 
-That's 20 `E`s — one per test — all failing because every function is
-`failwith "TODO"`. This is your starting point. Your job is to turn those `E`s
-into dots (`.`).
+This is normal! The test tried to call your first function (`bottom`), which is
+still a `failwith "TODO"` stub, so it crashed immediately. As you implement
+functions one by one, you'll start seeing individual test results instead:
+
+```
+..EEEEEE          ← 2 passing, 6 errors (still have TODOs)
+....F...EE        ← 4 passing, 1 wrong answer, 2 TODOs left
+....................  ← all 20 passing — done!
+```
+
+Your goal is to turn that fatal error into all dots (`.`).
 
 ---
 
@@ -166,11 +174,21 @@ exercises/sign-lattice/
    ```
 
 4. **Interpret the output:**
+
+   **Early on** (many TODOs remaining), you'll often see:
+   ```
+   Fatal error: exception Failure("TODO: ...")
+   ```
+   This means the tests hit a `failwith "TODO"` stub and crashed before they
+   could run individually. Keep implementing functions from the top of the file.
+
+   **Once enough functions are implemented**, you'll see per-test results:
+   ```
+   ..E.FEEEE
+   ```
    - `.` = test passed
-   - `E` = error (your code threw an exception, usually `failwith "TODO"`)
-   - `F` = failure (your code ran but returned the wrong answer)
-   - `Fatal error: exception Failure("TODO: ...")` = the first TODO crashed
-     before any tests could report individually
+   - `E` = error (your code threw an exception — likely a remaining TODO)
+   - `F` = failure (your code ran but returned the wrong answer — check logic)
 
 5. **Repeat** until all tests pass: `....................` (all dots!)
 
