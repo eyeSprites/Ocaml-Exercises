@@ -48,6 +48,12 @@ _build/
 .merlin
 _opam/
 
+# Local exercise folders (keep locally, don't push)
+modules/module3-static-analysis/exercises/dataflow-framework/
+modules/module3-static-analysis/exercises/interprocedural-analysis/
+modules/module3-static-analysis/exercises/live-variables/
+modules/module3-static-analysis/exercises/reaching-definitions/
+
 # Build artifacts
 *.o
 *.out

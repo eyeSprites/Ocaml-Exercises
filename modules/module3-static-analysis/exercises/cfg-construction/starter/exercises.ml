@@ -35,8 +35,18 @@ let build_cfg_sequential (stmts : stmt list) : Cfg.cfg =
      2. Add them to a StringMap
      3. Build the cfg record (entry = "ENTRY", exit_label = "EXIT")
      4. Add edges: ENTRY -> B1, B1 -> EXIT *)
-  ignore stmts;
-  failwith "TODO: build_cfg_sequential"
+  let entry = Cfg.create_block "ENTRY" [] in
+  let b1 = Cfg.create_block "B1" stmts in
+  let exit_block = Cfg.create_block "EXIT" [] in
+  let blocks =
+    Cfg.StringMap.empty
+    |> Cfg.StringMap.add "ENTRY" entry
+    |> Cfg.StringMap.add "B1" b1
+    |> Cfg.StringMap.add "EXIT" exit_block
+  in
+  let cfg = { Cfg.entry = "ENTRY"; exit_label = "EXIT"; blocks } in
+  let cfg = Cfg.add_edge cfg "ENTRY" "B1" in
+  Cfg.add_edge cfg "B1" "EXIT"
 
 (** Build a CFG for an if-else branch.
 
@@ -84,8 +94,35 @@ let build_cfg_ifelse (stmts : stmt list) : Cfg.cfg =
           B_then -> B_join
           B_else -> B_join
           B_join -> EXIT *)
-  ignore stmts;
-  failwith "TODO: build_cfg_ifelse"
+  let rec split_before_if acc = function
+    | [] -> failwith "build_cfg_ifelse: expected one If statement"
+    | If (cond, then_stmts, else_stmts) :: rest ->
+      (List.rev acc, cond, then_stmts, else_stmts, rest)
+    | s :: rest -> split_before_if (s :: acc) rest
+  in
+  let pre_stmts, _cond, then_stmts, else_stmts, post_stmts = split_before_if [] stmts in
+  let entry = Cfg.create_block "ENTRY" [] in
+  let b_cond = Cfg.create_block "B_cond" pre_stmts in
+  let b_then = Cfg.create_block "B_then" then_stmts in
+  let b_else = Cfg.create_block "B_else" else_stmts in
+  let b_join = Cfg.create_block "B_join" post_stmts in
+  let exit_block = Cfg.create_block "EXIT" [] in
+  let blocks =
+    Cfg.StringMap.empty
+    |> Cfg.StringMap.add "ENTRY" entry
+    |> Cfg.StringMap.add "B_cond" b_cond
+    |> Cfg.StringMap.add "B_then" b_then
+    |> Cfg.StringMap.add "B_else" b_else
+    |> Cfg.StringMap.add "B_join" b_join
+    |> Cfg.StringMap.add "EXIT" exit_block
+  in
+  let cfg = { Cfg.entry = "ENTRY"; exit_label = "EXIT"; blocks } in
+  let cfg = Cfg.add_edge cfg "ENTRY" "B_cond" in
+  let cfg = Cfg.add_edge cfg "B_cond" "B_then" in
+  let cfg = Cfg.add_edge cfg "B_cond" "B_else" in
+  let cfg = Cfg.add_edge cfg "B_then" "B_join" in
+  let cfg = Cfg.add_edge cfg "B_else" "B_join" in
+  Cfg.add_edge cfg "B_join" "EXIT"
 
 (** Build a CFG for a while loop.
 
@@ -122,5 +159,32 @@ let build_cfg_while (stmts : stmt list) : Cfg.cfg =
           B_cond -> B_post    (loop exit)
           B_body -> B_cond    (back edge)
           B_post -> EXIT *)
-  ignore stmts;
-  failwith "TODO: build_cfg_while"
+  let rec split_before_while acc = function
+    | [] -> failwith "build_cfg_while: expected one While statement"
+    | While (cond, body) :: rest ->
+      (List.rev acc, cond, body, rest)
+    | s :: rest -> split_before_while (s :: acc) rest
+  in
+  let pre_stmts, _cond, body_stmts, post_stmts = split_before_while [] stmts in
+  let entry = Cfg.create_block "ENTRY" [] in
+  let b_pre = Cfg.create_block "B_pre" pre_stmts in
+  let b_cond = Cfg.create_block "B_cond" [] in
+  let b_body = Cfg.create_block "B_body" body_stmts in
+  let b_post = Cfg.create_block "B_post" post_stmts in
+  let exit_block = Cfg.create_block "EXIT" [] in
+  let blocks =
+    Cfg.StringMap.empty
+    |> Cfg.StringMap.add "ENTRY" entry
+    |> Cfg.StringMap.add "B_pre" b_pre
+    |> Cfg.StringMap.add "B_cond" b_cond
+    |> Cfg.StringMap.add "B_body" b_body
+    |> Cfg.StringMap.add "B_post" b_post
+    |> Cfg.StringMap.add "EXIT" exit_block
+  in
+  let cfg = { Cfg.entry = "ENTRY"; exit_label = "EXIT"; blocks } in
+  let cfg = Cfg.add_edge cfg "ENTRY" "B_pre" in
+  let cfg = Cfg.add_edge cfg "B_pre" "B_cond" in
+  let cfg = Cfg.add_edge cfg "B_cond" "B_body" in
+  let cfg = Cfg.add_edge cfg "B_cond" "B_post" in
+  let cfg = Cfg.add_edge cfg "B_body" "B_cond" in
+  Cfg.add_edge cfg "B_post" "EXIT"
